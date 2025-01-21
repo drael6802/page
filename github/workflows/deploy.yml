@@ -1,0 +1,25 @@
+name: Deploy to Remote Server
+
+on:
+  push:
+    branches:
+      - main  # main 브랜치에 push가 발생할 때 실행
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p 8222 -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy files to remote server
+        run: |
+          rsync -avz -e "ssh -p 8222" --delete ./ ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/path/to/remote/directory
